@@ -1,0 +1,7 @@
+flet==0.80.5
+finance-datareader==0.9.102
+pandas
+requests==2.31.0
+numpy
+matplotlib
+ssl

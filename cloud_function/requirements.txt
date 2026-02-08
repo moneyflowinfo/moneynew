@@ -1,0 +1,8 @@
+fastapi==0.110.0
+uvicorn==0.29.0
+FinanceDataReader==0.9.102
+pandas==2.2.1
+requests==2.31.0
+numpy==1.26.4
+matplotlib==3.8.3
+ssl
