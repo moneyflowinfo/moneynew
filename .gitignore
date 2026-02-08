@@ -1,29 +1,38 @@
-# Python
+# Byte-compiled / optimized / dll files
 __pycache__/
 *.pyc
-*.pyo
 *.pyd
-.Python
-env/
-venv/
-flet_env/ # User's virtual environment
+*.pyo
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
 
-# IDEs
+# IDEs and editors
 .vscode/
 .idea/
+*.swp
+*.bak
+*.swo
+*~
 
-# Operating System
+# Virtual environments
+venv/
+env/
+flet_env/
+
+# OS generated files
 .DS_Store
+.Trashes
 Thumbs.db
 
 # Build artifacts
 dist/
 build/
-*.egg-info/
+*.zip
+*.tar.gz
+*.exe
+*.AppImage
 
 # Specific files
-market_data_analysis.csv
-market_data_cache.pkl # User's cache file
-
-# Cloud function related
+market_data_cache.pkl
 cloud_function.zip
