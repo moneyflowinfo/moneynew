@@ -613,6 +613,42 @@ class FinanceScannerApp(QMainWindow):
             df_export.to_csv(csv_filename, index=False, encoding='utf-8-sig')
             print(f"'{csv_filename}' 파일로 데이터 저장 완료.")
 
+            # Git 자동화 (사용자 요청에 따라 추가)
+            try:
+                import subprocess
+                project_root = os.path.dirname(os.path.abspath(__file__))
+                
+                # Git add
+                add_command = ["git", "add", csv_filename]
+                subprocess.run(add_command, cwd=project_root, check=True, capture_output=True, text=True)
+                print(f"Git: '{csv_filename}' 파일 추가 완료.")
+
+                # Git commit
+                commit_message = f"Update market data analysis CSV - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                commit_command = ["git", "commit", "-m", commit_message]
+                subprocess.run(commit_command, cwd=project_root, check=True, capture_output=True, text=True)
+                print(f"Git: 커밋 완료 - '{commit_message}'")
+
+                # 현재 브랜치 이름 가져오기
+                branch_proc = subprocess.run(
+                    ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                    cwd=project_root, check=True, capture_output=True, text=True
+                )
+                current_branch = branch_proc.stdout.strip()
+                print(f"Git: 현재 브랜치 '{current_branch}' 확인.")
+
+                # Git push
+                push_command = ["git", "push", "origin", current_branch]
+                subprocess.run(push_command, cwd=project_root, check=True, capture_output=True, text=True)
+                print(f"Git: 원격 저장소 ('{current_branch}' 브랜치)로 푸시 완료.")
+
+            except subprocess.CalledProcessError as e:
+                print(f"Git 자동화 중 오류 발생: {e}")
+                print(f"Git stdout: {e.stdout}")
+                print(f"Git stderr: {e.stderr}")
+            except Exception as e:
+                print(f"Git 자동화 중 예상치 못한 오류 발생: {e}")
+
         except Exception as e:
             print(f"CSV 파일 저장 중 오류 발생: {e}")
 
