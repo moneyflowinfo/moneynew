@@ -13,6 +13,9 @@ from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import pickle
 import os
+import schedule
+import time
+import threading
 
 # 미국 주식 한글 매핑
 US_TICKER_MAP = {
@@ -106,6 +109,28 @@ def save_cache(data_cache, result_cache):
         print("캐시 저장 완료")
     except Exception as e:
         print("캐시 저장 실패:", e)
+
+
+# 1시간마다 데이터 새로고침을 요청하는 백그라운드 스케줄러 스레드
+class SchedulerThread(QThread):
+    refresh_signal = pyqtSignal()
+
+    def run(self):
+        # UI가 먼저 뜨도록 초기 지연
+        time.sleep(5)
+        
+        # 매시간 정각에 실행되도록 설정
+        schedule.every().hour.at(":00").do(self.emit_signal)
+        
+        print("자동 새로고침 스케줄러 시작 (매시간 정각)")
+
+        while True:
+            schedule.run_pending()
+            time.sleep(1)
+
+    def emit_signal(self):
+        print(f"{datetime.now()}: 스케줄러가 새로고침 신호를 보냅니다.")
+        self.refresh_signal.emit()
 
 
 class MarketDataLoader(QThread):
@@ -274,6 +299,11 @@ class FinanceScannerApp(QMainWindow):
 
         self.initUI()
         self.start_scan()
+        
+        # 자동 새로고침 스케줄러 시작
+        self.scheduler = SchedulerThread()
+        self.scheduler.refresh_signal.connect(self.start_scan)
+        self.scheduler.start()
 
     def initUI(self):
         self.setWindowTitle("미국 주식 스캐너 - 정배열 & 상승 돌파")
@@ -541,6 +571,9 @@ class FinanceScannerApp(QMainWindow):
         self.status_label.setText(msg)
         self.all_data = results_dict
 
+        # CSV 파일로 내보내기
+        self.export_to_csv(self.all_data)
+
         sectors = set(item['sector'] for cat in results_dict for item in results_dict[cat])
         sector_list = ["전체"] + sorted(sectors)
 
@@ -556,6 +589,32 @@ class FinanceScannerApp(QMainWindow):
 
         # 스캔 완료 후 캐시 저장
         save_cache(self.data_cache, self.result_cache)
+
+    def export_to_csv(self, all_results):
+        try:
+            combined_data = all_results.get('완벽 정배열', []) + all_results.get('상승 돌파 시도중', [])
+            if not combined_data:
+                print("CSV 내보내기: 데이터 없음.")
+                return
+
+            df = pd.DataFrame(combined_data)
+            
+            columns_to_export = {
+                'signal': '신호', 'name': '종목명', 'ticker': '티커',
+                'price': '현재가', 'change': '전일대비', 'break_msg': '상태/돌파',
+                'rsi_d_str': 'RSI(일)', 'rsi_w_str': 'RSI(주)',
+                'vol': '거래량', 'sector': '섹터', 'category': '분류'
+            }
+            # DataFrame에 없는 열은 제외
+            df_export = df[[col for col in columns_to_export if col in df.columns]].copy()
+            df_export.rename(columns=columns_to_export, inplace=True)
+
+            csv_filename = "market_data_analysis.csv"
+            df_export.to_csv(csv_filename, index=False, encoding='utf-8-sig')
+            print(f"'{csv_filename}' 파일로 데이터 저장 완료.")
+
+        except Exception as e:
+            print(f"CSV 파일 저장 중 오류 발생: {e}")
 
     def apply_filters(self):
         for category, table, filters in [
