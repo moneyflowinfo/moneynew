@@ -17,28 +17,16 @@ import schedule
 import time
 import threading
 
-# 미국 주식 한글 매핑
-US_TICKER_MAP = {
-    "AAPL": "애플", "MSFT": "마이크로소프트", "AMZN": "아마존", "NVDA": "엔비디아",
-    "GOOGL": "구글A", "GOOG": "구글C", "META": "메타", "TSLA": "테슬라",
-    "AVGO": "브로드컴", "AMD": "AMD", "QCOM": "퀄컴", "INTC": "인텔",
-    "CSCO": "시스코", "ORCL": "오라클", "CRM": "세일즈포스", "ADBE": "어도비",
-    "NFLX": "넷플릭스", "PYPL": "페이팔", "NOW": "서비스나우", "PANW": "팔로알토",
-    "JPM": "JP모건", "V": "비자", "MA": "마스터카드", "BRK-B": "버크셔B",
-    "BAC": "뱅크오브아메리카", "WFC": "웰스파고", "UNH": "유나이티드헬스",
-    "LLY": "일라이릴리", "JNJ": "존슨앤존슨", "MRK": "머크", "ABBV": "앱비",
-    "PFE": "화이자", "BMY": "브리스톨마이어스", "KO": "코카콜라",
-    "PEP": "펩시코", "PG": "프록터앤갬블", "WMT": "월마트", "COST": "코스트코",
-    "HD": "홈디포", "XOM": "엑슨모빌", "CVX": "쉐브론",
-    "SCHD": "SCHD(배당ETF)", "DIVO": "DIVO", "JEPQ": "JEPQ", "JEPI": "JEPI",
-    "SPY": "SPY(S&P500)", "QQQ": "QQQ(나스닥100)", "QQQM": "QQQM", "VOO": "VOO",
-    "SPHD": "SPHD", "O": "리얼티인컴", "MAIN": "메인스트리트", "PLTR": "팔란티어",
-    "MCK": "맥케슨", "HSY": "허쉬", "COR": "코어사이언티픽", "CAH": "카디널헬스",
-    "TPR": "태퍼웨어", "CI": "씨그나", "CPAY": "코페이먼트", "CMS": "CMS에너지",
-    "EBAY": "이베이", "DTE": "DTE에너지", "ICE": "인터컨티넨탈익스체인지",
-}
-
 sector_cache = {}
+
+# Define US_TICKER_MAP to resolve NameError
+US_TICKER_MAP = {
+    "SPY": "SPDR S&P 500 ETF Trust",
+    "QQQ": "Invesco QQQ Trust",
+    "DIA": "SPDR Dow Jones Industrial Average ETF Trust",
+    "IVV": "iShares Core S&P 500",
+    "VOO": "Vanguard S&P 500 ETF",
+}
 
 def get_sector(ticker):
     if ticker in sector_cache:
@@ -233,7 +221,7 @@ class MarketDataLoader(QThread):
 
         result = {
             'ticker': ticker,
-            'name': US_TICKER_MAP.get(ticker, ticker),
+            'name': ticker,
             'price': f"${curr:,.2f}",
             'raw_price': curr,
             'change': f"{change_pct:+.2f}%",
@@ -390,54 +378,54 @@ class FinanceScannerApp(QMainWindow):
         filter_layout_p.setContentsMargins(0, 0, 0, 0)
         filter_layout_p.setSpacing(0)
 
-        self.filters_p = [None] * 9
+        self.filters_p = [None] * 9 # 종목명 필터 제거로 인덱스 조정
 
-        self.name_search_p = QLineEdit()
-        self.name_search_p.setPlaceholderText("종목명")
-        self.name_search_p.textChanged.connect(self.apply_filters)
-        self.filters_p[0] = self.name_search_p
+        # self.name_search_p = QLineEdit()
+        # self.name_search_p.setPlaceholderText("종목명")
+        # self.name_search_p.textChanged.connect(self.apply_filters)
+        # self.filters_p[0] = self.name_search_p
 
         self.ticker_search_p = QLineEdit()
         self.ticker_search_p.setPlaceholderText("티커")
         self.ticker_search_p.textChanged.connect(self.apply_filters)
-        self.filters_p[1] = self.ticker_search_p
+        self.filters_p[0] = self.ticker_search_p # Index 0
 
         self.price_combo_p = QComboBox()
         self.price_combo_p.addItems(["현재가", "< $100", "$100~200", "$200~300", "$300~500", "$500+"])
         self.price_combo_p.setPlaceholderText("현재가")
         self.price_combo_p.setCurrentIndex(-1)
         self.price_combo_p.currentIndexChanged.connect(self.apply_filters)
-        self.filters_p[2] = self.price_combo_p
+        self.filters_p[1] = self.price_combo_p # Index 1
 
         self.change_combo_p = QComboBox()
         self.change_combo_p.addItems(["전일대비", "상승률 ↑", "하락률 ↓"])
         self.change_combo_p.setPlaceholderText("전일대비")
         self.change_combo_p.setCurrentIndex(-1)
         self.change_combo_p.currentIndexChanged.connect(self.apply_filters)
-        self.filters_p[3] = self.change_combo_p
+        self.filters_p[2] = self.change_combo_p # Index 2
 
         self.status_combo_p = QComboBox()
         self.status_combo_p.addItems(["상태/돌파", "정배열", "신규 진입"])
         self.status_combo_p.setPlaceholderText("상태/돌파")
         self.status_combo_p.setCurrentIndex(-1)
         self.status_combo_p.currentIndexChanged.connect(self.apply_filters)
-        self.filters_p[4] = self.status_combo_p
+        self.filters_p[3] = self.status_combo_p # Index 3
 
         self.rsi_d_combo_p = QComboBox()
         self.rsi_d_combo_p.addItems(["RSI(일)", "70↑", "60~70", "50~60", "40~50", "30↓"])
         self.rsi_d_combo_p.setPlaceholderText("RSI(일)")
         self.rsi_d_combo_p.setCurrentIndex(-1)
         self.rsi_d_combo_p.currentIndexChanged.connect(self.apply_filters)
-        self.filters_p[5] = self.rsi_d_combo_p
+        self.filters_p[4] = self.rsi_d_combo_p # Index 4
 
         self.rsi_w_combo_p = QComboBox()
         self.rsi_w_combo_p.addItems(["RSI(주)", "70↑", "60~70", "50~60", "40~50", "30↓"])
         self.rsi_w_combo_p.setPlaceholderText("RSI(주)")
         self.rsi_w_combo_p.setCurrentIndex(-1)
         self.rsi_w_combo_p.currentIndexChanged.connect(self.apply_filters)
-        self.filters_p[6] = self.rsi_w_combo_p
+        self.filters_p[5] = self.rsi_w_combo_p # Index 5
 
-        self.filters_p[7] = QLabel("")
+        self.filters_p[6] = QLabel("") # Placeholder for '거래량'
 
         self.sector_combo_p = QComboBox()
         self.sector_combo_p.addItem("섹터")
@@ -445,7 +433,9 @@ class FinanceScannerApp(QMainWindow):
         self.sector_combo_p.setCurrentIndex(-1)
         self.sector_combo_p.setMinimumWidth(180)
         self.sector_combo_p.currentIndexChanged.connect(self.apply_filters)
-        self.filters_p[8] = self.sector_combo_p
+        self.filters_p[7] = self.sector_combo_p # Index 7
+
+        self.filters_p[8] = QLabel("") # Placeholder for the last empty column
 
         for widget in self.filters_p:
             container = QWidget()
@@ -458,9 +448,9 @@ class FinanceScannerApp(QMainWindow):
         perfect_container.addWidget(filter_widget_p)
 
         self.table_perfect = QTableWidget()
-        self.table_perfect.setColumnCount(10)
+        self.table_perfect.setColumnCount(9) # 종목명 제거로 10 -> 9
         self.table_perfect.setHorizontalHeaderLabels([
-            "종목명", "티커", "현재가", "전일대비",
+            "티커", "현재가", "전일대비",
             "상태/돌파", "RSI(일)", "RSI(주)", "거래량", "섹터", ""
         ])
         self.table_perfect.setMinimumHeight(550)
@@ -484,43 +474,39 @@ class FinanceScannerApp(QMainWindow):
 
         self.filters_b = [None] * 9
 
-        self.filters_b[0] = QLabel("")
-        self.filters_b[1] = QLabel("")
+        self.filters_b[0] = QLabel("") # Placeholder for Ticker
 
-        self.filters_b[2] = QComboBox()
-        self.filters_b[2].addItems(["현재가", "< $100", "$100~200", "$200~300", "$300~500", "$500+"])
-        self.filters_b[2].setPlaceholderText("현재가")
+        self.filters_b[1] = QComboBox() # Price Combo
+        self.filters_b[1].addItems(["현재가", "< $100", "$100~200", "$200~300", "$300~500", "$500+"])
+        self.filters_b[1].setPlaceholderText("현재가")
+        self.filters_b[1].setCurrentIndex(-1)
+
+        self.filters_b[2] = QComboBox() # Change Combo
+        self.filters_b[2].addItems(["전일대비", "상승률 ↑", "하락률↓"])
+        self.filters_b[2].setPlaceholderText("전일대비")
         self.filters_b[2].setCurrentIndex(-1)
-        self.filters_b[2].currentIndexChanged.connect(self.apply_filters)
 
-        self.filters_b[3] = QComboBox()
-        self.filters_b[3].addItems(["전일대비", "상승률 ↑", "하락률↓"])
-        self.filters_b[3].setPlaceholderText("전일대비")
-        self.filters_b[3].setCurrentIndex(-1)
-        self.filters_b[3].currentIndexChanged.connect(self.apply_filters)
+        self.filters_b[3] = QLabel("") # Placeholder for Status/Breakout
 
-        self.filters_b[4] = QLabel("")
+        self.filters_b[4] = QComboBox() # RSI(일) Combo
+        self.filters_b[4].addItems(["RSI(일)", "70↑", "60~70", "50~60", "40~50", "30↓"])
+        self.filters_b[4].setPlaceholderText("RSI(일)")
+        self.filters_b[4].setCurrentIndex(-1)
 
-        self.filters_b[5] = QComboBox()
-        self.filters_b[5].addItems(["RSI(일)", "70↑", "60~70", "50~60", "40~50", "30↓"])
-        self.filters_b[5].setPlaceholderText("RSI(일)")
+        self.filters_b[5] = QComboBox() # RSI(주) Combo
+        self.filters_b[5].addItems(["RSI(주)", "70↑", "60~70", "50~60", "40~50", "30↓"])
+        self.filters_b[5].setPlaceholderText("RSI(주)")
         self.filters_b[5].setCurrentIndex(-1)
-        self.filters_b[5].currentIndexChanged.connect(self.apply_filters)
 
-        self.filters_b[6] = QComboBox()
-        self.filters_b[6].addItems(["RSI(주)", "70↑", "60~70", "50~60", "40~50", "30↓"])
-        self.filters_b[6].setPlaceholderText("RSI(주)")
-        self.filters_b[6].setCurrentIndex(-1)
-        self.filters_b[6].currentIndexChanged.connect(self.apply_filters)
+        self.filters_b[6] = QLabel("") # Placeholder for Volume
 
-        self.filters_b[7] = QLabel("")
+        self.filters_b[7] = QComboBox() # Sector Combo
+        self.filters_b[7].addItem("섹터")
+        self.filters_b[7].setPlaceholderText("섹터")
+        self.filters_b[7].setCurrentIndex(-1)
+        self.filters_b[7].setMinimumWidth(180)
 
-        self.filters_b[8] = QComboBox()
-        self.filters_b[8].addItem("섹터")
-        self.filters_b[8].setPlaceholderText("섹터")
-        self.filters_b[8].setCurrentIndex(-1)
-        self.filters_b[8].setMinimumWidth(180)
-        self.filters_b[8].currentIndexChanged.connect(self.apply_filters)
+        self.filters_b[8] = QLabel("") # Placeholder for the last empty column
 
         for widget in self.filters_b:
             container = QWidget()
@@ -533,9 +519,9 @@ class FinanceScannerApp(QMainWindow):
         breakout_container.addWidget(filter_widget_b)
 
         self.table_breakout = QTableWidget()
-        self.table_breakout.setColumnCount(10)
+        self.table_breakout.setColumnCount(9) # 종목명 제거로 10 -> 9
         self.table_breakout.setHorizontalHeaderLabels([
-            "종목명", "티커", "현재가", "전일대비",
+            "티커", "현재가", "전일대비",
             "상태/돌파", "RSI(일)", "RSI(주)", "거래량", "섹터", ""
         ])
         self.table_breakout.setMinimumHeight(550)
@@ -553,12 +539,11 @@ class FinanceScannerApp(QMainWindow):
         for combo in [
             self.price_combo_p, self.change_combo_p, self.status_combo_p,
             self.rsi_d_combo_p, self.rsi_w_combo_p, self.sector_combo_p,
-            self.filters_b[2], self.filters_b[3], self.filters_b[5],
-            self.filters_b[6], self.filters_b[8]
+            self.filters_b[1], self.filters_b[2], self.filters_b[4],
+            self.filters_b[5], self.filters_b[7]
         ]:
             combo.currentIndexChanged.connect(self.apply_filters)
 
-        self.name_search_p.textChanged.connect(self.apply_filters)
         self.ticker_search_p.textChanged.connect(self.apply_filters)
 
     def start_scan(self):
@@ -581,9 +566,9 @@ class FinanceScannerApp(QMainWindow):
         self.sector_combo_p.addItems(sector_list)
         self.sector_combo_p.setCurrentIndex(-1)
 
-        self.filters_b[8].clear()
-        self.filters_b[8].addItems(sector_list)
-        self.filters_b[8].setCurrentIndex(-1)
+        self.filters_b[7].clear()
+        self.filters_b[7].addItems(sector_list)
+        self.filters_b[7].setCurrentIndex(-1)
 
         self.apply_filters()
 
@@ -600,7 +585,7 @@ class FinanceScannerApp(QMainWindow):
             df = pd.DataFrame(combined_data)
             
             columns_to_export = {
-                'signal': '신호', 'name': '종목명', 'ticker': '티커',
+                'signal': '신호', 'ticker': '티커',
                 'price': '현재가', 'change': '전일대비', 'break_msg': '상태/돌파',
                 'rsi_d_str': 'RSI(일)', 'rsi_w_str': 'RSI(주)',
                 'vol': '거래량', 'sector': '섹터', 'category': '분류'
@@ -660,26 +645,20 @@ class FinanceScannerApp(QMainWindow):
             data = self.all_data.get(category, [])
             filtered = data.copy()
 
-            # 종목명 검색
-            if category == "완벽 정배열":
-                name_text = filters[0].text().strip().lower() if isinstance(filters[0], QLineEdit) else ""
-                if name_text:
-                    filtered = [item for item in filtered if name_text in item['name'].lower()]
-
             # 티커 검색
             if category == "완벽 정배열":
-                ticker_text = filters[1].text().strip().lower() if isinstance(filters[1], QLineEdit) else ""
+                ticker_text = filters[0].text().strip().lower() if isinstance(filters[0], QLineEdit) else ""
                 if ticker_text:
                     filtered = [item for item in filtered if ticker_text in item['ticker'].lower()]
 
             # 현재가 필터
-            price_combo = filters[2]
+            price_combo = filters[1]
             price_filter = price_combo.currentText()
             if price_filter and price_filter != "현재가":
                 filtered = [item for item in filtered if self._price_match(item['raw_price'], price_filter)]
 
             # 전일대비 정렬
-            change_combo = filters[3]
+            change_combo = filters[2]
             change_sort = change_combo.currentText()
             if change_sort and change_sort != "전일대비":
                 if change_sort == "상승률 ↑":
@@ -689,7 +668,7 @@ class FinanceScannerApp(QMainWindow):
 
             # 상태/돌파
             if category == "완벽 정배열":
-                status_combo = filters[4]
+                status_combo = filters[3]
                 status_filter = status_combo.currentText()
                 if status_filter and status_filter != "상태/돌파":
                     if status_filter == "정배열":
@@ -698,19 +677,19 @@ class FinanceScannerApp(QMainWindow):
                         filtered = [item for item in filtered if item.get('is_new_entry', False)]
 
             # RSI(일)
-            rsi_d_combo = filters[5]
+            rsi_d_combo = filters[4]
             rsi_d_filter = rsi_d_combo.currentText()
             if rsi_d_filter and rsi_d_filter != "RSI(일)":
                 filtered = [item for item in filtered if self._rsi_match(item['rsi_d'], rsi_d_filter)]
 
             # RSI(주)
-            rsi_w_combo = filters[6]
+            rsi_w_combo = filters[5]
             rsi_w_filter = rsi_w_combo.currentText()
             if rsi_w_filter and rsi_w_filter != "RSI(주)":
                 filtered = [item for item in filtered if self._rsi_match(item['rsi_w'], rsi_w_filter)]
 
             # 섹터
-            sector_combo = filters[8]
+            sector_combo = filters[7]
             sector_filter = sector_combo.currentText()
             if sector_filter and sector_filter != "섹터" and sector_filter != "전체":
                 filtered = [item for item in filtered if item['sector'] == sector_filter]
@@ -737,17 +716,17 @@ class FinanceScannerApp(QMainWindow):
         table.setRowCount(len(data_list))
 
         for i, item in enumerate(data_list):
-            name = QTableWidgetItem(item['name'])
-            name.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-            table.setItem(i, 0, name)
+            # name = QTableWidgetItem(item['name']) # 종목명 제거
+            # name.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            # table.setItem(i, 0, name)
 
             ticker_item = QTableWidgetItem(item['ticker'])
             ticker_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            table.setItem(i, 1, ticker_item)
+            table.setItem(i, 0, ticker_item) # 인덱스 0으로 변경
 
             price = QTableWidgetItem(item['price'])
             price.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-            table.setItem(i, 2, price)
+            table.setItem(i, 1, price) # 인덱스 1으로 변경
 
             change = QTableWidgetItem(item['change'])
             change.setTextAlignment(Qt.AlignmentFlag.AlignRight)
@@ -755,7 +734,7 @@ class FinanceScannerApp(QMainWindow):
                 change.setForeground(QColor("#ef4444"))
             elif item['change_raw'] < 0:
                 change.setForeground(QColor("#3b82f6"))
-            table.setItem(i, 3, change)
+            table.setItem(i, 2, change) # 인덱스 2으로 변경
 
             status_text = item.get('break_msg', '—')
             status = QTableWidgetItem(status_text)
@@ -767,7 +746,7 @@ class FinanceScannerApp(QMainWindow):
             elif "돌파" in status_text or "반등" in status_text:
                 status.setForeground(QColor("#b45309"))
             status.setFont(QFont("Malgun Gothic", 10, QFont.Weight.Bold))
-            table.setItem(i, 4, status)
+            table.setItem(i, 3, status) # 인덱스 3으로 변경
 
             rsi_d = QTableWidgetItem(item['rsi_d_str'])
             rsi_d.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -780,7 +759,7 @@ class FinanceScannerApp(QMainWindow):
                     rsi_d.setForeground(QColor("#ef4444"))
             except:
                 pass
-            table.setItem(i, 5, rsi_d)
+            table.setItem(i, 4, rsi_d) # 인덱스 4으로 변경
 
             rsi_w = QTableWidgetItem(item['rsi_w_str'])
             rsi_w.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -793,30 +772,30 @@ class FinanceScannerApp(QMainWindow):
                     rsi_w.setForeground(QColor("#ef4444"))
             except:
                 pass
-            table.setItem(i, 6, rsi_w)
+            table.setItem(i, 5, rsi_w) # 인덱스 5으로 변경
 
             vol = QTableWidgetItem(item['vol'])
             vol.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             if item['vol_raw'] >= 2.0:
                 vol.setForeground(QColor("#b91c1c"))
                 vol.setFont(QFont("Malgun Gothic", 10, QFont.Weight.Bold))
-            table.setItem(i, 7, vol)
+            table.setItem(i, 6, vol) # 인덱스 6으로 변경
 
             sector_item = QTableWidgetItem(item['sector'])
             sector_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            table.setItem(i, 8, sector_item)
+            table.setItem(i, 7, sector_item) # 인덱스 7으로 변경
 
-            table.setItem(i, 9, QTableWidgetItem(""))
+            table.setItem(i, 8, QTableWidgetItem("")) # 인덱스 8으로 변경
 
         table.resizeColumnsToContents()
-        table.setColumnWidth(0, 260)   # 종목명
-        table.setColumnWidth(1, 100)   # 티커
-        table.setColumnWidth(2, 160)   # 현재가
-        table.setColumnWidth(3, 110)   # 전일대비
-        table.setColumnWidth(4, 320)   # 상태/돌파
-        table.setColumnWidth(5, 90)    # RSI(일)
-        table.setColumnWidth(6, 90)    # RSI(주)
-        table.setColumnWidth(8, 220)   # 섹터
+        # table.setColumnWidth(0, 260)   # 종목명 제거
+        table.setColumnWidth(0, 100)   # 티커 (인덱스 0)
+        table.setColumnWidth(1, 160)   # 현재가 (인덱스 1)
+        table.setColumnWidth(2, 110)   # 전일대비 (인덱스 2)
+        table.setColumnWidth(3, 320)   # 상태/돌파 (인덱스 3)
+        table.setColumnWidth(4, 90)    # RSI(일) (인덱스 4)
+        table.setColumnWidth(5, 90)    # RSI(주) (인덱스 5)
+        table.setColumnWidth(7, 220)   # 섹터 (인덱스 7)
 
     def add_ticker(self):
         text, ok = QInputDialog.getText(self, "종목 추가", "티커 입력 (쉼표로 여러개 가능):")
